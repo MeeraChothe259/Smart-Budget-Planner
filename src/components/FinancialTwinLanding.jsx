@@ -17,11 +17,19 @@ import {
 } from 'lucide-react';
 import { simulateDecision, DEFAULT_USER_PROFILE } from '../engine/financialTwinEngine';
 
-export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacyMode, formatCurrency }) {
+export default function FinancialTwinLanding({
+  onLaunchApp,
+  onStartDemo,
+  privacyMode,
+  formatCurrency,
+  profile = DEFAULT_USER_PROFILE,
+  onOpenStudio
+}) {
   const [testItem, setTestItem] = useState('Laptop');
   const [testCost, setTestCost] = useState(80000);
 
-  const sim = simulateDecision(DEFAULT_USER_PROFILE, testItem, testCost);
+  const activeProfile = profile || DEFAULT_USER_PROFILE;
+  const sim = simulateDecision(activeProfile, testItem, testCost);
 
   return (
     <div className="space-y-28 pb-20 antialiased selection:bg-brand-500 selection:text-white">
@@ -75,6 +83,16 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
               <Play className="w-5 h-5 text-emerald-500 fill-current" />
               <span>TRY FINANCIAL CTRL+Z</span>
             </button>
+
+            {onOpenStudio && (
+              <button
+                onClick={onOpenStudio}
+                className="px-6 py-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-2 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-extrabold text-base hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-2 shadow-md"
+              >
+                <Sliders className="w-5 h-5" />
+                <span>CUSTOMIZE MY SALARY & SAVINGS</span>
+              </button>
+            )}
           </div>
 
           {/* VISUAL PIPELINE FLOW DIAGRAM */}
@@ -87,7 +105,7 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
               <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
                 <span className="text-3xl">👤</span>
                 <div className="text-sm font-black text-slate-900 dark:text-white">1. User Profile</div>
-                <div className="text-xs text-slate-500 font-medium">Income, Savings, Goals</div>
+                <div className="text-xs text-slate-500 font-medium">Salary {formatCurrency(activeProfile.monthlyIncome)}</div>
               </div>
 
               <div className="p-4 rounded-2xl bg-gradient-to-b from-brand-500/10 to-brand-500/20 border-2 border-brand-500/40 shadow-sm space-y-1">
@@ -103,9 +121,9 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
               </div>
 
               <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border-2 border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                <span className="text-3xl">🌌</span>
-                <div className="text-sm font-black text-slate-900 dark:text-white">4. Multiple Futures</div>
-                <div className="text-xs text-slate-500 font-medium">5-Year Parallel Timelines</div>
+                <span className="text-3xl">⚡</span>
+                <div className="text-sm font-black text-slate-900 dark:text-white">4. Ctrl+Z Undo</div>
+                <div className="text-xs text-slate-500 font-medium">Replay Future Consequence</div>
               </div>
             </div>
           </div>
@@ -124,7 +142,7 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
                 ⚡ SIGNATURE FEATURE DEMO
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                "What if I buy an ₹80,000 Laptop?"
+                "What if I buy an {formatCurrency(testCost)} Laptop?"
               </h2>
             </div>
 
@@ -167,7 +185,7 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
               <div className="p-5 rounded-2xl bg-rose-500/10 border-2 border-rose-500/30 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-black text-rose-600 uppercase">Primary Goal Delay</div>
-                  <div className="text-base font-bold text-slate-900 dark:text-white">Europe Vacation Fund</div>
+                  <div className="text-base font-bold text-slate-900 dark:text-white">{activeProfile.goals?.[0]?.name || "Europe Vacation Fund"}</div>
                 </div>
                 <div className="text-2xl font-black text-rose-600">
                   +{sim.goalDelayDays} Days
@@ -178,48 +196,32 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
             {/* Before / After Comparison */}
             <div className="lg:col-span-7 space-y-4">
               <div className="text-xs font-black uppercase tracking-wider text-slate-400">
-                Instant Decision Consequence Analysis
+                Live Twin Consequences for {formatCurrency(activeProfile.monthlyIncome)}/mo Salary
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* BEFORE */}
-                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 space-y-3">
-                  <div className="text-xs font-black text-slate-400 uppercase">Current State (Before)</div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold">Liquid Savings</div>
-                    <div className="text-xl font-black text-slate-900 dark:text-white">
-                      {formatCurrency(sim.currentSavings)}
-                    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border-2 border-slate-200 dark:border-slate-700 space-y-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase">BEFORE DECISION</span>
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                    {formatCurrency(activeProfile.currentSavings)}
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold">Emergency Fund</div>
-                    <div className="text-xl font-black text-emerald-500">
-                      {formatCurrency(sim.currentEmergencyFund)}
-                    </div>
-                  </div>
+                  <p className="text-xs text-slate-500">Available liquid savings pool</p>
                 </div>
 
-                {/* AFTER */}
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-brand-500/10 to-violet-500/10 border-2 border-brand-500/40 space-y-3">
-                  <div className="text-xs font-black text-brand-600 dark:text-cyan-300 uppercase">Simulated Future (After)</div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold">Remaining Savings</div>
-                    <div className="text-xl font-black text-brand-600 dark:text-cyan-400">
-                      {formatCurrency(sim.newSavings)}
-                    </div>
+                <div className="p-5 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border-2 border-rose-400 dark:border-rose-800 space-y-2">
+                  <span className="text-xs font-bold text-rose-500 uppercase">AFTER PURCHASE</span>
+                  <div className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">
+                    {formatCurrency(sim.newSavings)}
                   </div>
-                  <div>
-                    <div className="text-xs text-slate-500 font-bold">Emergency Fund</div>
-                    <div className="text-xl font-black text-emerald-500">
-                      {formatCurrency(sim.newEmergencyFund)}
-                    </div>
-                  </div>
+                  <p className="text-xs text-rose-500 font-bold">Recovery: {sim.recoveryMonths} Months</p>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-brand-500/10 border border-brand-500/30 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+              <div className="p-4 rounded-2xl bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-800 flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-brand-500 shrink-0" />
-                <span><strong>AI Alternative:</strong> {sim.alternative}</span>
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  {sim.recommendation}
+                </p>
               </div>
             </div>
 
@@ -228,60 +230,49 @@ export default function FinancialTwinLanding({ onLaunchApp, onStartDemo, privacy
         </div>
       </section>
 
-
-      {/* 3. CORE HIGHLIGHTS GRID */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center max-w-xl mx-auto">
+      {/* 3. REVOLUTIONARY USP SHOWCASE */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-black uppercase tracking-wider">
+            ⚡ WHY WE ARE REVOLUTIONARY
+          </div>
           <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white">
-            Built for Real Life Decisions
+            Everything Existing Budget Apps Miss.
           </h2>
+          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+            Traditional budget apps show where money went. Your Financial Twin simulates where money will go before you spend a single rupee.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-card p-8 rounded-3xl border-2 border-slate-200 dark:border-slate-800 space-y-3">
-            <span className="text-4xl">🌌</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Parallel Universes</h3>
-            <p className="text-base text-slate-600 dark:text-slate-300 font-medium">
-              Compare 5 future financial timelines over 1, 3, and 5 years simultaneously.
+          <div className="glass-card p-8 rounded-3xl border-2 border-brand-500/30 space-y-4 hover:border-brand-500 transition-colors">
+            <div className="w-12 h-12 rounded-2xl bg-brand-500 text-white flex items-center justify-center font-black text-xl">
+              ⚡
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">Financial Ctrl+Z</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Stack multiple life choices, see future cash consequences, and hit Ctrl+Z to undo decisions in reverse order.
             </p>
           </div>
 
-          <div className="glass-card p-8 rounded-3xl border-2 border-slate-200 dark:border-slate-800 space-y-3">
-            <span className="text-4xl">🧭</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">8 Life Planners</h3>
-            <p className="text-base text-slate-600 dark:text-slate-300 font-medium">
-              City Relocation, Travel, MBA Abroad, Home Buying, Vehicle TCO, and Wedding planners.
+          <div className="glass-card p-8 rounded-3xl border-2 border-cyan-500/30 space-y-4 hover:border-cyan-500 transition-colors">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500 text-white flex items-center justify-center font-black text-xl">
+              🁢
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">Domino Effect</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              One purchase triggers a 5-step financial reaction: savings drop, emergency buffer cracks, goals delay, stress spikes.
             </p>
           </div>
 
-          <div className="glass-card p-8 rounded-3xl border-2 border-slate-200 dark:border-slate-800 space-y-3">
-            <span className="text-4xl">💳</span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Can I Afford It?</h3>
-            <p className="text-base text-slate-600 dark:text-slate-300 font-medium">
-              Evaluates instant purchases with an AI Regret Risk predictor score.
+          <div className="glass-card p-8 rounded-3xl border-2 border-violet-500/30 space-y-4 hover:border-violet-500 transition-colors">
+            <div className="w-12 h-12 rounded-2xl bg-violet-500 text-white flex items-center justify-center font-black text-xl">
+              ⏳
+            </div>
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">5-Year Time Machine</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Scrub a dynamic time slider from Today through 5 Years into the future. Watch compound interest and net worth delta live.
             </p>
-          </div>
-        </div>
-      </section>
-
-
-      {/* 4. FINAL CALL TO ACTION */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl p-10 sm:p-16 bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-500 text-white text-center shadow-glow space-y-6">
-          <h2 className="text-3xl sm:text-5xl font-black">
-            Ready to Build Your Financial Twin?
-          </h2>
-          <p className="text-lg sm:text-xl text-brand-100 font-medium max-w-xl mx-auto">
-            Don't just track your money. Simulate your future before making today's decisions.
-          </p>
-          <div className="pt-2 flex justify-center">
-            <button
-              onClick={onLaunchApp}
-              className="px-9 py-5 rounded-2xl bg-white text-brand-700 font-black text-lg shadow-xl hover:bg-brand-50 transition-all flex items-center gap-3"
-            >
-              <span>CREATE MY FINANCIAL TWIN NOW</span>
-              <ArrowRight className="w-6 h-6 text-brand-600" />
-            </button>
           </div>
         </div>
       </section>

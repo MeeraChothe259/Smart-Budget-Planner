@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import FinancialTwinNavbar from './components/FinancialTwinNavbar';
 import FinancialTwinLanding from './components/FinancialTwinLanding';
 import OneDecisionBar from './components/OneDecisionBar';
+import LiveFinancialBar from './components/LiveFinancialBar';
+import FinancialStudioModal from './components/FinancialStudioModal';
 import DigitalTwinOverview from './components/DigitalTwinOverview';
 import CtrlZSimulatorView from './components/CtrlZSimulatorView';
 import FinancialDominoView from './components/FinancialDominoView';
@@ -47,7 +49,9 @@ import {
   Trophy,
   Eye,
   EyeOff,
-  UserCheck
+  UserCheck,
+  Sliders,
+  PiggyBank
 } from 'lucide-react';
 
 export default function App() {
@@ -66,8 +70,24 @@ export default function App() {
   // Theme state
   const [darkMode, setDarkMode] = useState(false);
 
-  // Profile State initialized to default demo profile
-  const [profile, setProfile] = useState(DEFAULT_USER_PROFILE);
+  // Financial Studio Modal open state
+  const [isStudioOpen, setIsStudioOpen] = useState(false);
+
+  // Profile State initialized from localStorage if available, else default demo profile
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartbudget_financial_twin_profile');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed.monthlyIncome === 'number') {
+          return { ...DEFAULT_USER_PROFILE, ...parsed };
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load profile from localStorage:', e);
+    }
+    return DEFAULT_USER_PROFILE;
+  });
 
   // Simulation parameters from OneDecisionBar
   const [simItem, setSimItem] = useState('Laptop');
@@ -88,6 +108,15 @@ export default function App() {
     return `₹${Math.round(amount || 0).toLocaleString('en-IN')}`;
   };
 
+  const handleUpdateProfile = (updatedProfile) => {
+    setProfile(updatedProfile);
+    try {
+      localStorage.setItem('smartbudget_financial_twin_profile', JSON.stringify(updatedProfile));
+    } catch (e) {
+      console.error('Failed to save profile to localStorage:', e);
+    }
+  };
+
   const handleRunSimulation = (item, price) => {
     setSimItem(item);
     setSimPrice(price);
@@ -99,8 +128,22 @@ export default function App() {
     setProfile(DEFAULT_USER_PROFILE);
     setSimItem('Laptop');
     setSimPrice(80000);
+    try {
+      localStorage.removeItem('smartbudget_financial_twin_profile');
+    } catch (e) {
+      console.error('Failed to remove profile from localStorage:', e);
+    }
     setDashboardSubView('ctrlZ');
   };
+
+  // Monthly savings calculation for sidebar
+  const sidebarMonthlySavings = Math.max(
+    0,
+    profile.monthlyIncome - profile.fixedExpenses - profile.variableExpenses - (profile.debtEmis || 0)
+  );
+  const sidebarSavingsRate = profile.monthlyIncome > 0
+    ? Math.round((sidebarMonthlySavings / profile.monthlyIncome) * 100)
+    : 0;
 
   // Categorized Sidebar Navigation Items with Lucide SVG Icons
   const sidebarGroups = [
@@ -155,6 +198,9 @@ export default function App() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         onResetDemo={handleResetDemo}
+        profile={profile}
+        formatCurrency={formatCurrency}
+        onOpenStudio={() => setIsStudioOpen(true)}
       />
 
       {/* VIEW CONDITIONAL RENDERING */}
@@ -171,6 +217,8 @@ export default function App() {
             }}
             privacyMode={privacyMode}
             formatCurrency={formatCurrency}
+            profile={profile}
+            onOpenStudio={() => setIsStudioOpen(true)}
           />
         </main>
       ) : (
@@ -214,7 +262,7 @@ export default function App() {
               </div>
 
               {/* Sidebar Navigation Groups */}
-              <div className="space-y-6 max-h-[calc(100vh-220px)] overflow-y-auto pr-1 scrollbar-none">
+              <div className="space-y-6 max-h-[calc(100vh-250px)] overflow-y-auto pr-1 scrollbar-none">
                 {sidebarGroups.map((group, gIdx) => (
                   <div key={gIdx} className="space-y-2">
                     <div className="text-[10px] font-black tracking-wider text-slate-400 dark:text-slate-500 uppercase px-2">
@@ -268,17 +316,50 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Sidebar Footer User Info */}
+              {/* Sidebar Footer User Info & Interactive Real-Time Quick Controls */}
               <div className="pt-4 border-t-2 border-slate-100 dark:border-slate-800 space-y-3">
-                <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1 text-xs font-bold">
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/80 dark:to-slate-800/40 border border-slate-200 dark:border-slate-700/60 space-y-2 text-xs font-bold">
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-black tracking-wider text-slate-400">
+                      Live Finances
+                    </span>
+                    <button
+                      onClick={() => setIsStudioOpen(true)}
+                      className="text-[11px] font-extrabold text-brand-600 dark:text-cyan-400 hover:underline flex items-center gap-1"
+                    >
+                      <Sliders className="w-3 h-3" />
+                      <span>Edit ✎</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                     <span>Monthly Salary:</span>
                     <span className="text-slate-900 dark:text-white font-black">{formatCurrency(profile.monthlyIncome)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                    <span>Savings Pool:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-black">{formatCurrency(profile.currentSavings)}</span>
+
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                    <span>Monthly Savings:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                      {formatCurrency(sidebarMonthlySavings)} ({sidebarSavingsRate}%)
+                    </span>
                   </div>
+
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
+                    <span>Savings Pool:</span>
+                    <span className="text-slate-900 dark:text-white font-black">{formatCurrency(profile.currentSavings)}</span>
+                  </div>
+
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsStudioOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-brand-600 to-cyan-500 text-white text-xs font-extrabold shadow-sm hover:scale-[1.02] transition-transform"
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Customize Finances ⚡</span>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -295,8 +376,17 @@ export default function App() {
             </aside>
 
             {/* MAIN DASHBOARD CONTENT AREA */}
-            <main className="flex-1 w-full space-y-8">
+            <main className="flex-1 w-full space-y-6">
               
+              {/* REAL-TIME LIVE FINANCIALS CONTROL BAR */}
+              <LiveFinancialBar
+                profile={profile}
+                onUpdateProfile={handleUpdateProfile}
+                onOpenStudio={() => setIsStudioOpen(true)}
+                privacyMode={privacyMode}
+                formatCurrency={formatCurrency}
+              />
+
               {/* ONE DECISION QUICK PROMPT BAR */}
               <OneDecisionBar
                 onRunSimulation={handleRunSimulation}
@@ -335,6 +425,7 @@ export default function App() {
                   onSelectView={(v) => setDashboardSubView(v)}
                   privacyMode={privacyMode}
                   formatCurrency={formatCurrency}
+                  onOpenStudio={() => setIsStudioOpen(true)}
                 />
               )}
 
@@ -457,6 +548,16 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Real-Time Financial Customizer Studio Modal */}
+      <FinancialStudioModal
+        isOpen={isStudioOpen}
+        onClose={() => setIsStudioOpen(false)}
+        profile={profile}
+        onUpdateProfile={handleUpdateProfile}
+        onResetDemo={handleResetDemo}
+        formatCurrency={formatCurrency}
+      />
 
       {/* Footer */}
       <footer className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 mt-16 text-center border-t-2 border-slate-200 dark:border-slate-800 pt-8 text-sm text-slate-600 dark:text-slate-400 font-medium">

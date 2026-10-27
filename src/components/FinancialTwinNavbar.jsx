@@ -15,7 +15,8 @@ import {
   Globe2,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Sliders
 } from 'lucide-react';
 
 export default function FinancialTwinNavbar({
@@ -25,10 +26,19 @@ export default function FinancialTwinNavbar({
   setPrivacyMode,
   darkMode,
   setDarkMode,
-  onResetDemo
+  onResetDemo,
+  profile,
+  formatCurrency,
+  onOpenStudio
 }) {
+  const salary = profile?.monthlyIncome || 50000;
+  const fixed = profile?.fixedExpenses || 24000;
+  const variable = profile?.variableExpenses || 11000;
+  const debt = profile?.debtEmis || 0;
+  const monthlySavings = Math.max(0, salary - fixed - variable - debt);
+
   return (
-    <header className="sticky top-0 z-50 w-full glass-panel border-b-2 border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#070b14]/90 backdrop-blur-xl transition-colors">
+    <header className="sticky top-0 z-40 w-full glass-panel border-b-2 border-slate-200/80 dark:border-slate-800/80 bg-white/90 dark:bg-[#070b14]/90 backdrop-blur-xl transition-colors">
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 flex items-center justify-between gap-3">
         
         {/* Logo & Brand */}
@@ -82,6 +92,24 @@ export default function FinancialTwinNavbar({
         {/* Right Controls */}
         <div className="flex items-center gap-2">
           
+          {/* Real-time Salary & Savings Studio Trigger Button */}
+          {onOpenStudio && (
+            <button
+              onClick={onOpenStudio}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-black rounded-xl bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 hover:border-emerald-500 transition-all shadow-sm group"
+              title="Edit your salary, monthly savings, and expenses live"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <Sliders className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:rotate-45 transition-transform" />
+              <span className="font-extrabold truncate max-w-[110px] sm:max-w-none">
+                {formatCurrency ? formatCurrency(salary) : `₹${salary.toLocaleString('en-IN')}`}/mo
+              </span>
+              <span className="hidden md:inline text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 px-1 py-0.5 rounded bg-emerald-500/20">
+                Save {formatCurrency ? formatCurrency(monthlySavings) : `₹${monthlySavings.toLocaleString('en-IN')}`}
+              </span>
+            </button>
+          )}
+
           {/* Privacy Mode Mask Toggle */}
           <button
             onClick={() => setPrivacyMode(!privacyMode)}
@@ -99,11 +127,11 @@ export default function FinancialTwinNavbar({
           {/* Reset Demo User Profile Button */}
           <button
             onClick={onResetDemo}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
             title="Reset to Demo User Profile (Mumbai, ₹50,000/mo)"
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>DEMO USER</span>
+            <span>RESET DEMO</span>
           </button>
 
           {/* Theme Switcher */}
